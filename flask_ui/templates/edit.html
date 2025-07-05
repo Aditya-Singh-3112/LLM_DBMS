@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Edit {{ collection }} Document</title>
+    <style>
+      .flash-success { color: green; }
+      .flash-error   { color: red; }
+      label { display: block; margin-top: 8px; }
+      input, button { font-size: 1rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Edit <code>{{ collection }}</code> Document: {{ doc['_id'] }}</h1>
+
+    {% with messages = get_flashed_messages(with_categories=True) %}
+      {% for category, msg in messages %}
+        <div class="flash-{{ category }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="post">
+      <input type="hidden" name="id" value="{{ doc['_id'] }}" />
+      {% for name, props in schema.items() %}
+        <label for="{{ name }}">{{ name }}:</label>
+        {% set val = doc.get(name, '') %}
+        {% if props.type == 'number' %}
+          <input id="{{ name }}" name="{{ name }}" type="number" step="any" value="{{ val }}" />
+        {% elif props.type == 'boolean' %}
+          <input id="{{ name }}" name="{{ name }}" type="checkbox" {% if val %}checked{% endif %} />
+        {% else %}
+          <input id="{{ name }}" name="{{ name }}" type="text" value="{{ val }}" />
+        {% endif %}
+      {% endfor %}
+      <button type="submit" style="margin-top:12px;">Save Changes</button>
+    </form>
+
+    <p><a href="{{ url_for('view', collection=collection) }}">← Back to Documents</a></p>
+  </body>
+</html>

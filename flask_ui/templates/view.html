@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>View {{ collection }} Documents</title>
+    <style>
+      table { border-collapse: collapse; width: 100%; margin-top:12px; }
+      th, td { border: 1px solid #ccc; padding: 6px; }
+      th { background: #f0f0f0; }
+      .pagination a { margin: 0 4px; text-decoration: none; }
+      .current-page { font-weight: bold; }
+      .flash-success { color: green; }
+      .flash-error   { color: red; }
+    </style>
+  </head>
+  <body>
+    <h1>Documents in <code>{{ collection }}</code></h1>
+
+    {% with messages = get_flashed_messages(with_categories=True) %}
+      {% for category, msg in messages %}
+        <div class="flash-{{ category }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% if documents %}
+      <table>
+        <thead>
+          <tr>
+            {% for key in documents[0].keys() %}
+              <th>{{ key }}</th>
+            {% endfor %}
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for doc in documents %}
+            <tr>
+              {% for val in doc.values() %}
+                <td>{{ val }}</td>
+              {% endfor %}
+              <td>
+                <a href="{{ url_for('edit', collection=collection, doc_id=doc['_id']) }}">Edit</a>
+                &nbsp;|&nbsp;
+                <form method="post" action="{{ url_for('delete_doc', collection=collection) }}" style="display:inline;">
+                  <input type="hidden" name="id" value="{{ doc['_id'] }}" />
+                  <button type="submit" onclick="return confirm('Delete this document?');">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No documents found.</p>
+    {% endif %}
+
+    <div class="pagination" style="margin-top:12px;">
+      {% if page > 1 %}
+        <a href="{{ url_for('view', collection=collection, skip=(page-2)*limit, limit=limit) }}">Previous</a>
+      {% endif %}
+      {% for p in range(1, pages+1) %}
+        {% if p == page %}
+          <span class="current-page">{{ p }}</span>
+        {% else %}
+          <a href="{{ url_for('view', collection=collection, skip=(p-1)*limit, limit=limit) }}">{{ p }}</a>
+        {% endif %}
+      {% endfor %}
+      {% if page < pages %}
+        <a href="{{ url_for('view', collection=collection, skip=page*limit, limit=limit) }}">Next</a>
+      {% endif %}
+    </div>
+
+    <p><a href="{{ url_for('index') }}">← Back to Collections</a></p>
+    <p>
+        <a href="{{ url_for('edit_schema', collection=collection) }}">
+            🛠 Edit Schema
+        </a>
+    </p>
+
+  </body>
+</html>

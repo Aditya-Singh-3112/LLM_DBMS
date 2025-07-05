@@ -1,5 +1,6 @@
 {
   "name": "Bob",
+  "age": 25.0,
   "country": "USA",
   "_id": "3a3bdb06-dab0-4ef7-8340-347834212be1"
 }

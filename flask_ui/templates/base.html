@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+  <head>
+    <title>LLM DBMS</title>
+    <style>
+      body { font-family: sans-serif; margin: 2rem; }
+      a { text-decoration: none; color: #0074D9; }
+      table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+      th, td { border: 1px solid #ddd; padding: 0.5rem; }
+      th { background: #f0f0f0; }
+      .flash-success { color: green; }
+      .flash-error { color: red; }
+      .nav { margin-bottom: 1rem; }
+      .nav a { margin-right: 1rem; }
+    </style>
+  </head>
+  <body>
+    <div class="nav">
+      <a href="{{ url_for('index') }}">🏠 Tables</a>
+      <a href="{{ url_for('nlq') }}">🧠 NLQ</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=True) %}
+      {% for category, msg in messages %}
+        <div class="flash-{{ 'success' if category == 'success' else 'error' }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </body>
+</html>

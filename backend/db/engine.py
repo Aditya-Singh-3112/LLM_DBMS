@@ -1,104 +1,80 @@
-import os
-import json
-import uuid
-from typing import Dict, Any, List
+from sqlalchemy import Table, MetaData, Column, Integer, String, inspect, insert, select, delete, update
+from backend.db.database import engine
 
-BASE_PATH = "./data"
+from sqlalchemy import inspect
+from backend.db.database import engine
 
-def list_collections() -> List[str]:
+def list_tables() -> list[str]:
+    """Return a list of all table names in the SQLite database."""
+    inspector = inspect(engine)
+    return inspector.get_table_names()
+
+def get_columns(table_name: str) -> dict[str, str]:
     """
-    Return a list of all collection names (subdirectories under BASE_PATH).
+    Return a mapping of column_name → SQL type (as string),
+    e.g. { "id": "INTEGER", "name": "TEXT" }.
     """
-    if not os.path.exists(BASE_PATH):
-        return []
-    return [
-        d for d in os.listdir(BASE_PATH)
-        if os.path.isdir(os.path.join(BASE_PATH, d))
-    ]
+    inspector = inspect(engine)
+    cols = inspector.get_columns(table_name)
+    return {col["name"]: str(col["type"]) for col in cols}
 
-def insert(collection: str, document: Dict[str, Any]) -> str:
+def list_collections():
     """
-    Insert a new document into the specified collection.
-    Generates a UUID for `_id`, writes to disk, and returns the new ID.
+    Return all table names in the database.
     """
-    col_path = os.path.join(BASE_PATH, collection)
-    os.makedirs(col_path, exist_ok=True)
+    inspector = inspect(engine)
+    return inspector.get_table_names()
 
-    doc_id = str(uuid.uuid4())
-    document["_id"] = doc_id
-
-    with open(os.path.join(col_path, f"{doc_id}.json"), "w") as f:
-        json.dump(document, f, indent=2)
-
-    return doc_id
-
-def find(collection: str, filters: Dict[str, Any]) -> List[Dict[str, Any]]:
+def get_table(table_name: str):
     """
-    Find all documents in a collection matching the exact key/value filters.
+    Reflect a table definition from the database.
     """
-    col_path = os.path.join(BASE_PATH, collection)
-    if not os.path.exists(col_path):
-        return []
+    meta = MetaData()
+    return Table(table_name, meta, autoload_with=engine)
 
-    results: List[Dict[str, Any]] = []
-    for filename in os.listdir(col_path):
-        file_path = os.path.join(col_path, filename)
-        try:
-            with open(file_path, "r") as f:
-                doc = json.load(f)
-            if all(doc.get(k) == v for k, v in filters.items()):
-                results.append(doc)
-        except Exception:
-            # skip unreadable files
-            continue
-
-    return results
-
-def delete(collection: str, filters: Dict[str, Any]) -> int:
+def insert_record(table_name: str, document: dict) -> int:
     """
-    Delete all documents matching the filters. Returns the number deleted.
+    Insert a new row; returns the new primary key.
     """
-    col_path = os.path.join(BASE_PATH, collection)
-    if not os.path.exists(col_path):
-        return 0
+    table = get_table(table_name)
+    with engine.begin() as conn:
+        result = conn.execute(insert(table).values(**document))
+        return result.inserted_primary_key[0]
 
-    deleted = 0
-    for filename in os.listdir(col_path):
-        file_path = os.path.join(col_path, filename)
-        try:
-            with open(file_path, "r") as f:
-                doc = json.load(f)
-            if all(doc.get(k) == v for k, v in filters.items()):
-                os.remove(file_path)
-                deleted += 1
-        except Exception:
-            continue
-
-    return deleted
-
-def update(collection: str, filters: Dict[str, Any], new_doc: Dict[str, Any]) -> int:
+def find_records(table_name: str, filters: dict) -> list[dict]:
     """
-    Update all documents matching `filters` by replacing their contents
-    with `new_doc` (preserving the original `_id`). Returns number updated.
+    SELECT * FROM table WHERE filters...
     """
-    col_path = os.path.join(BASE_PATH, collection)
-    if not os.path.exists(col_path):
-        return 0
+    table = get_table(table_name)
+    stmt = select(table)
+    for k, v in filters.items():
+        stmt = stmt.where(table.c[k] == v)
+    with engine.begin() as conn:
+        rows = conn.execute(stmt).all()
+        return [dict(r._mapping) for r in rows]
 
-    updated_count = 0
-    for filename in os.listdir(col_path):
-        file_path = os.path.join(col_path, filename)
-        try:
-            with open(file_path, "r") as f:
-                doc = json.load(f)
-            if all(doc.get(k) == v for k, v in filters.items()):
-                # preserve the original ID
-                new_doc_copy = new_doc.copy()
-                new_doc_copy["_id"] = doc["_id"]
-                with open(file_path, "w") as f:
-                    json.dump(new_doc_copy, f, indent=2)
-                updated_count += 1
-        except Exception:
-            continue
+def delete_records(table_name: str, filters: dict) -> int:
+    """
+    DELETE FROM table WHERE filters...
+    Returns number of rows deleted.
+    """
+    table = get_table(table_name)
+    stmt = delete(table)
+    for k, v in filters.items():
+        stmt = stmt.where(table.c[k] == v)
+    with engine.begin() as conn:
+        result = conn.execute(stmt)
+        return result.rowcount
 
-    return updated_count
+def update_records(table_name: str, filters: dict, new_data: dict) -> int:
+    """
+    UPDATE table SET new_data WHERE filters...
+    Returns number of rows updated.
+    """
+    table = get_table(table_name)
+    stmt = update(table).values(**new_data)
+    for k, v in filters.items():
+        stmt = stmt.where(table.c[k] == v)
+    with engine.begin() as conn:
+        result = conn.execute(stmt)
+        return result.rowcount

@@ -32,7 +32,9 @@ pipe = pipeline(
 async def generate(req: Request):
     body = await req.json()
     prompt = body["inputs"]
-    params = body.get("parameters", {"max_new_tokens" : 300, "temperature" : 0.2})
+    params = body.get("parameters", {"max_new_tokens": 300, "temperature": 0.7})
+    if "temperature" in params and params["temperature"] <= 0:
+        params["temperature"] = 0.7
 
     output = pipe(prompt, **params)
     return {"generated_text" : output[0]["generated_text"]}

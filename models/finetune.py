@@ -15,8 +15,8 @@ from huggingface_hub import login, notebook_login
 # Setting up variables
 #---------------------------------------------------
 
-model_name = "meta-llama/Llama-2-7b-hf"
-dataset = load_dataset("Clinton/Text-to-sql-v1")
+model_name = "model"  # Replace with your model name
+dataset = load_dataset("dataset_name")  # Replace with your dataset name
 use_hf = True
 token = "Your_Token"  # Replace with your Hugging Face token
 

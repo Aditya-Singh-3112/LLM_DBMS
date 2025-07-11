@@ -2,33 +2,51 @@
 
 {% block content %}
   <h2>🧠 Natural Language Query</h2>
-  <form method="POST">
-    <input type="text" name="prompt" value="{{ prompt }}" style="width: 70%" placeholder="e.g. Show all users from India" />
-    <button type="submit">Run</button>
+
+  <!-- NLQ form -->
+  <form id="nlq-form" method="POST">
+    <input
+      type="text"
+      name="prompt"
+      value="{{ prompt }}"
+      style="width: 70%; padding: 0.5rem;"
+      placeholder="e.g. Show all users from India"
+    />
+    <button type="submit" style="padding: 0.5rem 1rem;">Run</button>
   </form>
 
+  <!-- Error -->
   {% if error %}
-    <div class="flash-error">Error: {{ error }}</div>
+    <div class="flash-error" style="margin-top:1rem;">Error: {{ error }}</div>
+
+  <!-- Rows Affected -->
   {% elif rows_affected is not none %}
-    <div class="flash-success">✅ Rows affected: {{ rows_affected }}</div>
+    <div class="flash-success" style="margin-top:1rem;">
+      ✅ Rows affected: {{ rows_affected }}
+    </div>
+
+  <!-- Result Table -->
   {% elif result %}
-    <table>
-      <thead>
-        <tr>
-          {% for key in result[0].keys() %}
-            <th>{{ key }}</th>
-          {% endfor %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in result %}
+    <h3 style="margin-top:1.5rem;">Result:</h3>
+    <div style="overflow-x:auto; margin-top:1rem;">
+      <table>
+        <thead>
           <tr>
-            {% for val in row.values() %}
-              <td>{{ val }}</td>
+            {% for col in result[0].keys() %}
+              <th style="padding:0.5rem; border:1px solid #ccc;">{{ col }}</th>
             {% endfor %}
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {% for row in result %}
+            <tr>
+              {% for val in row.values() %}
+                <td style="padding:0.5rem; border:1px solid #eee;">{{ val }}</td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% endif %}
 {% endblock %}

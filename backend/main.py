@@ -3,10 +3,18 @@ from pydantic import BaseModel
 import sqlite3
 from typing import List, Optional, Any, Dict
 from backend.llm_interface import parse_prompt
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="LLM-Powered SQL DB")
 
 DB_FILE = "database.db"
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def get_db():
     return sqlite3.connect(DB_FILE)

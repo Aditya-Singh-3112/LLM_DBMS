@@ -172,9 +172,4 @@ trainer = transformers.Trainer(
 base_model.config.use_cache = False
 trainer.train()
 
-#---------------------------------------------------
-# uploading the model to Hugging Face
-#---------------------------------------------------
-login(token = "your_profile_token")  # Replace with your Hugging Face token
-base_model.push_to_hub("AdityaSingh312/sql-finetuned-model", use_auth_token = True, private=True)
-tokenizer.push_to_hub("AdityaSingh312/sql-finetuned-model", use_auth_token = True, private=True)
+# add code to save the model
